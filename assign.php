@@ -175,7 +175,7 @@ function pcAssignments() {
     }
 }
 
-if (isset($_REQUEST["update"]) && $Me->allow_administer($prow) && check_post()) {
+if (isset($_REQUEST["update"]) && ($Me->allow_administer($prow) || $Me->is_pc_member()) && check_post()) {
     pcAssignments();
     $Conf->qe("unlock tables");
     $Conf->update_rev_tokens_setting(false);
@@ -471,7 +471,7 @@ if ($t !== "")
 
 
 // PC assignments
-if ($Me->can_administer($prow)) {
+if ($Me->can_administer($prow) || $Me->is_pc_member()) {
     $result = $Conf->qe("select ContactInfo.contactId,
         PaperConflict.conflictType,
         PaperReview.reviewType,
@@ -495,7 +495,7 @@ if ($Me->can_administer($prow)) {
     // PC conflicts row
     echo '<hr class="papcard_sep" />',
         Ht::form($loginUrl, array("id" => "ass")), '<div class="aahc">',
-        "<h3 style=\"margin-top:0\">PC review assignments</h3>",
+        "<h3 style=\"margin-top:0\">Committee review assignments</h3>",
         '<p>';
 
     $rev_round = (string) $Conf->sanitize_round_name(req("rev_round"));
@@ -591,45 +591,47 @@ if ($Me->can_administer($prow)) {
 
 echo "</div></div>\n";
 
-// add external reviewers
-echo Ht::form($loginUrl), '<div class="aahc revcard"><div class="revcard_head">',
-    "<h3>Request an external review</h3>\n",
-    "<div class='hint'>External reviewers get access to their assigned papers, including ";
-if ($Conf->setting("extrev_view") >= 2)
-    echo "the other reviewers' identities and ";
-echo "any eventual decision.  Before requesting an external review,
- you should generally check personally whether they are interested.";
-if ($Me->allow_administer($prow))
-    echo "\nTo create a review with no associated reviewer, leave Name and Email blank.";
-echo '</div></div><div class="revcard_body">';
-echo "<div class='f-i'><div class='f-ix'>
-  <div class='f-c'>Name</div>
-  <div class='f-e'><input type='text' name='name' value=\"", htmlspecialchars(defval($_REQUEST, "name", "")), "\" size='32' tabindex='1' /></div>
-</div><div class='f-ix'>
-  <div class='f-c", (isset($Error["email"]) ? " error" : ""), "'>Email</div>
-  <div class='f-e'><input type='text' name='email' value=\"", htmlspecialchars(defval($_REQUEST, "email", "")), "\" size='28' tabindex='1' /></div>
-</div><hr class=\"c\" /></div>\n\n";
-
-// reason area
-$null_mailer = new HotCRPMailer;
-$reqbody = $null_mailer->expand_template("requestreview", false);
-if (strpos($reqbody["body"], "%REASON%") !== false) {
-    echo "<div class='f-i'>
-  <div class='f-c'>Note to reviewer <span class='f-cx'>(optional)</span></div>
-  <div class='f-e'>",
-        Ht::textarea("reason", req("reason"),
-                array("class" => "papertext", "rows" => 2, "cols" => 60, "tabindex" => 1, "spellcheck" => "true")),
-        "</div><hr class=\"c\" /></div>\n\n";
+if ($Conf->setting("enable_extrev")) {
+	// add external reviewers
+	echo Ht::form($loginUrl), '<div class="aahc revcard"><div class="revcard_head">',
+	    "<h3>Request an external review</h3>\n",
+	    "<div class='hint'>External reviewers get access to their assigned papers, including ";
+	if ($Conf->setting("extrev_view") >= 2)
+	    echo "the other reviewers' identities and ";
+	echo "any eventual decision.  Before requesting an external review,
+	 you should generally check personally whether they are interested.";
+	if ($Me->allow_administer($prow))
+	    echo "\nTo create a review with no associated reviewer, leave Name and Email blank.";
+	echo '</div></div><div class="revcard_body">';
+	echo "<div class='f-i'><div class='f-ix'>
+	  <div class='f-c'>Name</div>
+	  <div class='f-e'><input type='text' name='name' value=\"", htmlspecialchars(defval($_REQUEST, "name", "")), "\" size='32' tabindex='1' /></div>
+	</div><div class='f-ix'>
+	  <div class='f-c", (isset($Error["email"]) ? " error" : ""), "'>Email</div>
+	  <div class='f-e'><input type='text' name='email' value=\"", htmlspecialchars(defval($_REQUEST, "email", "")), "\" size='28' tabindex='1' /></div>
+	</div><hr class=\"c\" /></div>\n\n";
+	
+	// reason area
+	$null_mailer = new HotCRPMailer;
+	$reqbody = $null_mailer->expand_template("requestreview", false);
+	if (strpos($reqbody["body"], "%REASON%") !== false) {
+	    echo "<div class='f-i'>
+	  <div class='f-c'>Note to reviewer <span class='f-cx'>(optional)</span></div>
+	  <div class='f-e'>",
+	        Ht::textarea("reason", req("reason"),
+	                array("class" => "papertext", "rows" => 2, "cols" => 60, "tabindex" => 1, "spellcheck" => "true")),
+	        "</div><hr class=\"c\" /></div>\n\n";
+	}
+	
+	echo "<div class='f-i'>\n",
+	    Ht::submit("add", "Request review", array("tabindex" => 2)),
+	    "</div>\n\n";
+	
+	
+	if ($Me->can_administer($prow))
+	    echo "<div class='f-i'>\n  ", Ht::checkbox("override"), "&nbsp;", Ht::label("Override deadlines and any previous refusal"), "\n</div>\n";
+	
+	echo "</div></div></form>\n";
 }
-
-echo "<div class='f-i'>\n",
-    Ht::submit("add", "Request review", array("tabindex" => 2)),
-    "</div>\n\n";
-
-
-if ($Me->can_administer($prow))
-    echo "<div class='f-i'>\n  ", Ht::checkbox("override"), "&nbsp;", Ht::label("Override deadlines and any previous refusal"), "\n</div>\n";
-
-echo "</div></div></form>\n";
 
 $Conf->footer();

@@ -416,7 +416,7 @@ function reviewLinks(PaperInfo $prow, $rrows, $crows, $rrow, $mode, &$allreviews
     if ($mode !== "assign" && $mode !== "edit"
         && $Me->can_request_review($prow, true)) {
         $x = '<a href="' . hoturl("assign", "p=$prow->paperId") . '" class="xx">'
-            . Ht::img("assign48.png", "[Assign]", $dlimgjs) . "&nbsp;<u>" . ($admin ? "Assign reviews" : "External reviews") . "</u></a>";
+            . Ht::img("assign48.png", "[Assign]", $dlimgjs) . "&nbsp;<u>" . (($admin || $Me->is_pc_member()) ? "Assign reviews" : "External reviews") . "</u></a>";
         $t .= ($t === "" ? "" : $xsep) . $x;
     }
 

@@ -2347,7 +2347,8 @@ class Contact {
     function can_request_review(PaperInfo $prow, $check_time) {
         $rights = $this->rights($prow);
         return ($rights->review_type >= REVIEW_PC
-                 || $rights->allow_administer)
+                 || $rights->allow_administer
+                 || $this->is_pc_member())
             && (!$check_time
                 || $this->conf->time_review(null, false, true)
                 || $this->override_deadlines($rights));

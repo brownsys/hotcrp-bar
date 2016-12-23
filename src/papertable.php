@@ -1856,7 +1856,7 @@ class PaperTable {
         // what actions are supported?
         $canEdit = $Me->can_edit_paper($prow);
         $canReview = $Me->can_review($prow, null);
-        $canAssign = $Me->can_administer($prow);
+        $canAssign = $Me->can_administer($prow) || $Me->is_pc_member();
         $canHome = ($canEdit || $canAssign || $this->mode === "contact");
 
         $t = "";
